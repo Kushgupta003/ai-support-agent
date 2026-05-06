@@ -1,4 +1,4 @@
-# 🤖 AI Customer Support Agent with RAG
+# RAG-based AI support agent with intelligent routing and real-time responses
 
 A production-ready AI Customer Support Agent built using **LangGraph, FastAPI, and RAG (Retrieval-Augmented Generation)**.  
 This project demonstrates real-world AI system design, backend development, and intelligent query routing.
