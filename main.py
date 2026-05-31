@@ -41,17 +41,24 @@ class DocumentProcessor:
         self._process_documents(documents)
         
     def _process_documents(self, documents: List) -> None:
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=200,
+        chunk_overlap=20
+    )
         texts = text_splitter.split_documents(documents)
         if self.vectorstore is None:
             self.vectorstore = FAISS.from_documents(texts, self.embeddings)
         else:
             self.vectorstore.add_documents(texts)
             
-    def search(self, query: str, k: int = 3) -> str:
+    def search(self, query: str, k: int = 1) -> str:
         if self.vectorstore is None:
             return "No documents loaded yet."
-        docs = self.vectorstore.similarity_search(query, k=k)
+        docs = self.vectorstore.similarity_search(query, k=1)
+        print("\n========== QUERY ==========")
+        print(query)
+        print("\n========== RETRIEVED CHUNK ==========")
+        print(docs[0].page_content)
         context = "\n\n".join([doc.page_content for doc in docs])
         return context if context else "No relevant context found."
 
@@ -95,8 +102,18 @@ def categorize_query(query: str) -> str:
 
 # ✅ Pre-defined Response Templates (No Model Download)
 def generate_response(category: str, query: str, context: str) -> str:
+
+    # Use document context if available
+    # Use document context if available
+    if (
+        context
+        and context != "No documents loaded yet."
+        and context != "No relevant context found."
+    ):
+        return f"According to the uploaded document:\n\n{context[:200]}..."
+
     query_lower = query.lower()
-    
+
     # Technical Responses
     if category == "Technical":
         if "password" in query_lower or "login" in query_lower:
@@ -144,8 +161,8 @@ def analyze_sentiment(state: State) -> State:
     return {"sentiment": sentiment}
 
 def get_context(state: State) -> State:
-    processor = DocumentProcessor()
-    context = processor.search(state["query"])
+    global doc_processor
+    context = doc_processor.search(state["query"])
     return {"context": context}
 
 def handle_technical(state: State) -> State:

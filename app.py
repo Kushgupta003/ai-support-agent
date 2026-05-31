@@ -67,11 +67,30 @@ async def list_documents():
 async def delete_document(filename: str):
     try:
         file_path = f"uploads/{filename}"
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            return {"status": "success", "message": f"Deleted {filename}"}
-        else:
+
+        if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="File not found")
+
+        # Delete physical file
+        os.remove(file_path)
+
+        # Rebuild vector store
+        main.doc_processor = main.DocumentProcessor()
+
+        for file in os.listdir("uploads"):
+            full_path = os.path.join("uploads", file)
+
+            if file.endswith(".pdf"):
+                main.doc_processor.load_pdf(full_path)
+
+            elif file.endswith(".txt"):
+                main.doc_processor.load_text(full_path)
+
+        return {
+            "status": "success",
+            "message": f"Deleted {filename} and rebuilt vector database"
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
